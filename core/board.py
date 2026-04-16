@@ -13,18 +13,15 @@ class Board:
         self.place_mines()
         self.calculate_neighbors()
 
-    # Random mines
+    # 💣 Place mines (optimized)
     def place_mines(self):
-        placed = 0
-        while placed < self.mines:
-            r = random.randint(0, self.rows - 1)
-            c = random.randint(0, self.cols - 1)
+        positions = [(r, c) for r in range(self.rows) for c in range(self.cols)]
+        mine_positions = random.sample(positions, self.mines)
 
-            if not self.grid[r][c].is_mine:
-                self.grid[r][c].is_mine = True
-                placed += 1
+        for r, c in mine_positions:
+            self.grid[r][c].is_mine = True
 
-    # numbers
+    # 🔢 Calculate neighbor mine counts
     def calculate_neighbors(self):
         for r in range(self.rows):
             for c in range(self.cols):
@@ -32,8 +29,14 @@ class Board:
                     continue
 
                 count = 0
+
                 for dr in [-1, 0, 1]:
                     for dc in [-1, 0, 1]:
+
+                        # skip itself
+                        if dr == 0 and dc == 0:
+                            continue
+
                         nr, nc = r + dr, c + dc
 
                         if 0 <= nr < self.rows and 0 <= nc < self.cols:
@@ -42,34 +45,54 @@ class Board:
 
                 self.grid[r][c].neighbor_mines = count
 
-    # On-click
+    # 🖱️ Reveal a cell
     def reveal_cell(self, r, c):
+        # safety check
+        if not (0 <= r < self.rows and 0 <= c < self.cols):
+            return "invalid"
+
         cell = self.grid[r][c]
 
         if cell.is_revealed or cell.is_flagged:
-            return
+            return "ignored"
 
         cell.is_revealed = True
 
-        #boom
+        # 💥 mine hit
         if cell.is_mine:
             return "mine"
 
+        # 🌊 flood fill if empty
         if cell.neighbor_mines == 0:
             self.flood_fill(r, c)
 
         return "safe"
 
+    # 🌊 Flood fill (recursive reveal)
     def flood_fill(self, r, c):
         for dr in [-1, 0, 1]:
             for dc in [-1, 0, 1]:
+
                 nr, nc = r + dr, c + dc
 
                 if 0 <= nr < self.rows and 0 <= nc < self.cols:
                     neighbor = self.grid[nr][nc]
 
-                    if not neighbor.is_revealed and not neighbor.is_mine:
-                        neighbor.is_revealed = True
+                    if neighbor.is_revealed or neighbor.is_mine:
+                        continue
 
-                        if neighbor.neighbor_mines == 0:
-                            self.flood_fill(nr, nc)
+                    neighbor.is_revealed = True
+
+                    if neighbor.neighbor_mines == 0:
+                        self.flood_fill(nr, nc)
+
+    # 🏆 Check win condition
+    def check_win(self):
+        for r in range(self.rows):
+            for c in range(self.cols):
+                cell = self.grid[r][c]
+
+                if not cell.is_mine and not cell.is_revealed:
+                    return False
+
+        return True
