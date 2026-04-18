@@ -1,8 +1,12 @@
 from PyQt5.QtWidgets import QWidget, QGridLayout, QMessageBox
-from core.board import Board
-from widgets.cell_widget import CellWidget
 from PyQt5.QtGui import QIcon
+from core.board import Board
+from widgets.cell_widgets import CellWidget
 from services.sound_manager import SoundManager
+from PyQt5.QtWidgets import QVBoxLayout, QLabel
+from PyQt5.QtCore import QTimer
+from PyQt5.QtWidgets import QGridLayout
+from PyQt5.QtGui import QIcon
 
 
 class BoardWidget(QWidget):
@@ -12,12 +16,27 @@ class BoardWidget(QWidget):
         self.board = Board(rows, cols, mines)
         self.sound = SoundManager()
 
-        self.layout = QGridLayout()
-        self.setLayout(self.layout)
+        # LAYOUTS
+        self.main_layout = QVBoxLayout()
+        self.setLayout(self.main_layout)
+
+        self.timer_label = QLabel("Time: 0")
+        self.main_layout.addWidget(self.timer_label)
+
+        self.grid_layout = QGridLayout()
+        self.main_layout.addLayout(self.grid_layout)
 
         self.cells = []
 
+        # TIMER
+        self.time = 0
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_timer)
+        self.timer.start(1000)
+
         self.init_ui()
+
+
 
     def init_ui(self):
         for r in range(self.board.rows):
@@ -25,15 +44,13 @@ class BoardWidget(QWidget):
             for c in range(self.board.cols):
                 cell_btn = CellWidget(r, c)
 
-                # LEFT CLICK
                 cell_btn.clicked.connect(
                     lambda _, r=r, c=c: self.handle_click(r, c)
                 )
 
-                # RIGHT CLICK
                 cell_btn.right_clicked.connect(self.handle_right_click)
 
-                self.layout.addWidget(cell_btn, r, c)
+                self.grid_layout.addWidget(cell_btn, r, c)
                 row_cells.append(cell_btn)
 
             self.cells.append(row_cells)
@@ -50,12 +67,14 @@ class BoardWidget(QWidget):
         if result == "mine":
             self.sound.play_explosion()
             self.show_game_over()
+            self.disable_board()
+
         else:
             self.sound.play_click()
 
-            # 🏆 WIN CHECK
             if self.board.check_win():
                 self.show_win()
+                self.disable_board()
 
         self.update_ui()
 
@@ -77,12 +96,24 @@ class BoardWidget(QWidget):
     def show_win(self):
         QMessageBox.information(self, "Victory", "You win! 🎉")
 
+    # 🔒 Disable board
+    def disable_board(self):
+        for row in self.cells:
+            for btn in row:
+                btn.setEnabled(False)
+
+    def update_timer(self):
+        self.time += 1
+        self.timer_label.setText(f"Time: {self.time}")
+
     # 🔄 UPDATE UI
     def update_ui(self):
         for r in range(self.board.rows):
             for c in range(self.board.cols):
                 cell = self.board.grid[r][c]
                 btn = self.cells[r][c]
+
+                btn.setIcon(QIcon())  # reset icon
 
                 if cell.is_flagged:
                     btn.setIcon(QIcon("ui/resources/flag.png"))
@@ -93,4 +124,5 @@ class BoardWidget(QWidget):
                     else:
                         if cell.neighbor_mines > 0:
                             btn.setIcon(QIcon(f"ui/resources/numbers/{cell.neighbor_mines}.png"))
-                        btn.setEnabled(False)
+
+                    btn.setEnabled(False)

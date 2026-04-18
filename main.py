@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtWidgets import QApplication
-from widgets import BoardWidget
+from widgets.board_widgets import BoardWidget
 
 def main():
     app = QApplication(sys.argv)
