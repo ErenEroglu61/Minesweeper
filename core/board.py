@@ -9,9 +9,7 @@ class Board:
         self.mines = mines
 
         self.grid = [[Cell() for _ in range(cols)] for _ in range(rows)]
-
-        self.place_mines()
-        self.calculate_neighbors()
+        self.first_click = True
 
     # 💣 Place mines (optimized)
     def place_mines(self):
@@ -47,7 +45,6 @@ class Board:
 
     # 🖱️ Reveal a cell
     def reveal_cell(self, r, c):
-        # safety check
         if not (0 <= r < self.rows and 0 <= c < self.cols):
             return "invalid"
 
@@ -56,17 +53,34 @@ class Board:
         if cell.is_revealed or cell.is_flagged:
             return "ignored"
 
+        # 🎯 FIRST CLICK LOGIC
+        if self.first_click:
+            self.first_click = False
+            self.place_mines_safe(r, c)
+            self.calculate_neighbors()
+
         cell.is_revealed = True
 
-        # 💥 mine hit
         if cell.is_mine:
             return "mine"
 
-        # 🌊 flood fill if empty
         if cell.neighbor_mines == 0:
             self.flood_fill(r, c)
 
         return "safe"
+
+    def place_mines_safe(self, safe_r, safe_c):
+        positions = [
+            (r, c)
+            for r in range(self.rows)
+            for c in range(self.cols)
+            if not (r == safe_r and c == safe_c)  # ❗ SAFE CELL
+        ]
+
+        mine_positions = random.sample(positions, self.mines)
+
+        for r, c in mine_positions:
+            self.grid[r][c].is_mine = True
 
     # 🌊 Flood fill (recursive reveal)
     def flood_fill(self, r, c):

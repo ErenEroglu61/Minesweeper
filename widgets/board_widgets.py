@@ -1,13 +1,13 @@
 from PyQt5.QtWidgets import QWidget, QGridLayout, QMessageBox
-from PyQt5.QtGui import QIcon
 from core.board import Board
 from widgets.cell_widgets import CellWidget
 from services.sound_manager import SoundManager
 from PyQt5.QtWidgets import QVBoxLayout, QLabel
 from PyQt5.QtCore import QTimer
-from PyQt5.QtWidgets import QGridLayout
 from PyQt5.QtGui import QIcon
-
+from widgets.settings_panel import SettingsPanel
+from PyQt5.QtWidgets import QPushButton
+from PyQt5.QtWidgets import QHBoxLayout
 
 class BoardWidget(QWidget):
     def __init__(self, rows=8, cols=8, mines=10):
@@ -20,11 +20,35 @@ class BoardWidget(QWidget):
         self.main_layout = QVBoxLayout()
         self.setLayout(self.main_layout)
 
+        # 🔝 TOP BAR
+        self.top_bar = QHBoxLayout()
+        self.main_layout.addLayout(self.top_bar)
+
+        # 🔄 Restart Button
+        self.restart_btn = QPushButton("🔄")
+        self.restart_btn.clicked.connect(self.restart_game)
+        self.top_bar.addWidget(self.restart_btn)
+
+        # ⏱ Timer (center)
         self.timer_label = QLabel("Time: 0")
-        self.main_layout.addWidget(self.timer_label)
+        self.top_bar.addWidget(self.timer_label)
+
+        # spacer (push settings to right)
+        self.top_bar.addStretch()
+
+        # ⚙️ Settings Button (right)
+        self.settings_btn = QPushButton("⚙")
+        self.settings_btn.clicked.connect(self.toggle_settings)
+        self.top_bar.addWidget(self.settings_btn)
 
         self.grid_layout = QGridLayout()
         self.main_layout.addLayout(self.grid_layout)
+
+
+        # SETTINGS PANEL
+        self.settings_panel = SettingsPanel(self.apply_settings)
+        self.settings_panel.hide()
+        self.main_layout.addWidget(self.settings_panel)
 
         self.cells = []
 
@@ -36,6 +60,35 @@ class BoardWidget(QWidget):
 
         self.init_ui()
 
+    def restart_game(self):
+        reply = QMessageBox.question(
+            self,
+            "Restart",
+            "Are you sure you want to restart?",
+            QMessageBox.Yes | QMessageBox.No
+        )
+
+        if reply == QMessageBox.No:
+            return
+
+        rows = self.board.rows
+        cols = self.board.cols
+        mines = self.board.mines
+
+        while self.grid_layout.count():
+            item = self.grid_layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+
+        self.cells = []
+
+        self.board = Board(rows, cols, mines)
+
+        self.time = 0
+        self.timer_label.setText("Time: 0")
+
+        self.init_ui()
 
 
     def init_ui(self):
@@ -78,6 +131,31 @@ class BoardWidget(QWidget):
 
         self.update_ui()
 
+    def apply_settings(self, rows, cols, mines):
+        while self.grid_layout.count():
+            item = self.grid_layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+
+        self.cells = []
+
+        # new board
+        self.board = Board(rows, cols, mines)
+
+        self.time = 0
+        self.timer_label.setText("Time: 0")
+
+        self.init_ui()
+
+        self.settings_panel.hide()
+
+    def toggle_settings(self):
+        if self.settings_panel.isVisible():
+            self.settings_panel.hide()
+        else:
+            self.settings_panel.show()
+
     # 🖱️ RIGHT CLICK
     def handle_right_click(self, r, c):
         cell = self.board.grid[r][c]
@@ -106,14 +184,13 @@ class BoardWidget(QWidget):
         self.time += 1
         self.timer_label.setText(f"Time: {self.time}")
 
-    # 🔄 UPDATE UI
     def update_ui(self):
         for r in range(self.board.rows):
             for c in range(self.board.cols):
                 cell = self.board.grid[r][c]
                 btn = self.cells[r][c]
 
-                btn.setIcon(QIcon())  # reset icon
+                btn.setIcon(QIcon())  # reset
 
                 if cell.is_flagged:
                     btn.setIcon(QIcon("ui/resources/flag.png"))
@@ -126,3 +203,7 @@ class BoardWidget(QWidget):
                             btn.setIcon(QIcon(f"ui/resources/numbers/{cell.neighbor_mines}.png"))
 
                     btn.setEnabled(False)
+
+                else:
+                    # 👇 default hidden cell
+                    btn.setIcon(QIcon("ui/resources/my_icon.jpg"))
