@@ -5,6 +5,36 @@ class SettingsPanel(QWidget):
     def __init__(self, apply_callback):
         super().__init__()
 
+        self.setStyleSheet("""
+            QWidget {
+                background-color: #2a2a40;
+                border-radius: 10px;
+            }
+
+            QLabel {
+                color: white;
+                font-size: 14px;
+            }
+
+            QSpinBox {
+                background-color: #3a3a5a;
+                color: white;
+                border-radius: 5px;
+                padding: 3px;
+            }
+
+            QPushButton {
+                background-color: #4a4a6a;
+                color: white;
+                border-radius: 6px;
+                padding: 5px;
+            }
+
+            QPushButton:hover {
+                background-color: #5a5a7a;
+            }
+        """)
+
         self.apply_callback = apply_callback
 
         layout = QVBoxLayout()
