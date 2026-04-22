@@ -109,6 +109,10 @@ class Board:
 
         for dr in [-1, 0, 1]:
             for dc in [-1, 0, 1]:
+
+                if dr == 0 and dc == 0:
+                    continue
+
                 nr, nc = r + dr, c + dc
 
                 if 0 <= nr < self.rows and 0 <= nc < self.cols:
@@ -125,6 +129,9 @@ class Board:
 
         flagged = self.count_flagged_neighbors(r, c)
 
+        # 🔥 PUT DEBUG HERE
+        print(f"[DEBUG] Cell ({r},{c}) -> Flags: {flagged}, Needed: {cell.neighbor_mines}")
+
         if flagged != cell.neighbor_mines:
             return None
 
@@ -132,6 +139,10 @@ class Board:
 
         for dr in [-1, 0, 1]:
             for dc in [-1, 0, 1]:
+
+                if dr == 0 and dc == 0:
+                    continue
+
                 nr, nc = r + dr, c + dc
 
                 if 0 <= nr < self.rows and 0 <= nc < self.cols:

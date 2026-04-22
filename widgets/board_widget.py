@@ -209,17 +209,21 @@ class BoardWidget(QWidget):
         if cell.is_flagged:
             return
 
-        # 🔥 SMART CLICK
+        # Smart Click if flags == num reveal all neighbors
         if cell.is_revealed:
             results = self.board.reveal_neighbors_if_flags_match(r, c)
 
             if results:
-                if "mine" in results:
+                if any(r == "mine" for r in results):
                     self.sound.play_explosion()
                     self.show_game_over()
                     self.disable_board()
                 else:
                     self.sound.play_click()
+
+                    if self.board.check_win():
+                        self.show_win()
+                        self.disable_board()
 
             self.update_ui()
             return
@@ -342,7 +346,6 @@ class BoardWidget(QWidget):
                         if cell.neighbor_mines > 0:
                             btn.setIcon(QIcon(resource_path(f"ui/resources/numbers/{cell.neighbor_mines}.png")))
 
-                    btn.setEnabled(False)
 
                 else:
                     btn.setIcon(QIcon(resource_path("ui/resources/my_icon.jpg")))
