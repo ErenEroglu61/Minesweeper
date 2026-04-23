@@ -232,6 +232,10 @@ class BoardWidget(QWidget):
 
         if result == "mine":
             self.sound.play_explosion()
+
+            self.reveal_all_mines()
+            self.update_ui()
+
             self.show_game_over()
             self.disable_board()
         else:
@@ -288,6 +292,14 @@ class BoardWidget(QWidget):
         self.mines_label.setText(f"Mines: {self.remaining_mines}")
 
         self.update_ui()
+
+    def reveal_all_mines(self):
+        for r in range(self.board.rows):
+            for c in range(self.board.cols):
+                cell = self.board.grid[r][c]
+
+                if cell.is_mine:
+                    cell.is_revealed = True
 
     # LOSE
     def show_game_over(self):
